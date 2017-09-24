@@ -37,16 +37,30 @@ var colors = [
 ];
 // ... in random order
 colors.sort(function (a, b) {
-  return (Math.random() > 0.5) ? 1 : 0;
+  return (Math.random() > 0.5)
+    ? 1
+    : 0;
 });
 /**
  * HTTP server
  */
 var server = http.createServer(function (request, response) {
-  // Not important for us. We're writing WebSocket server, not HTTP server
+  console.log((new Date().toString()) + ' HTTP server. URL' + request.url + ' requested.');
+
+  if (request.url === '/status') {
+    response.writeHead(200, {'Content-Type': 'application/json'});
+    var responseObject = {
+      currentClients: clients.length,
+      totalHistory: history.length
+    };
+    response.end(JSON.stringify(responseObject));
+  } else {
+    response.writeHead(404, {'Content-Type': 'text/plain'});
+    response.end('Sorry, unknown url');
+  }
 });
 
-server.listen(webSocketsServerPort, undefined, undefined, logSrv );
+server.listen(webSocketsServerPort, undefined, undefined, logSrv);
 
 function logSrv() {
   console.log((new Date().toString()) + " Server is listening on port " + webSocketsServerPort);
@@ -123,7 +137,7 @@ wsServer.on('request', function (request) {
 
       var message = {
         time: (new Date()).getTime(),
-        text: htmlEntities(userName + ` said Bye Bye and leave this chat.`),
+        text: htmlEntities(userName + ` said Bye and leave this chat.`),
         author: 'Chat bot',
         color: 'black'
       };
@@ -133,6 +147,11 @@ wsServer.on('request', function (request) {
 
 });
 
+/**
+ * Add message to History and broadcast to all
+ * 
+ * @param {object} message 
+ */
 function addNewMessage(message) {
   history.push(message);
   history = history.slice(-100);
